@@ -1,9 +1,0 @@
-{
-  "steps": 1000,
-  "mean_err": 1.588,
-  "po_rate": 0.354,
-  "de_rate": 0.646,
-  "other_rate": 0.0,
-  "final_handle_count": 0,
-  "top_handles": []
-}
