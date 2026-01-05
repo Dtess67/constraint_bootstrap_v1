@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual env
+.venv/
+
+# Run artifacts
+data/training_runs/
+*.json
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
