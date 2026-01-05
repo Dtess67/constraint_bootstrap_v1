@@ -1,0 +1,13 @@
+========================================================================
+BOOTSTRAP v0.1  partner=prime_count_v1  steps=200
+Watch: predicted vs actual, error, and handles forming.
+========================================================================
+001  sent=[2 4 6]                pred=[]         act=[5]        err= 2.0  lane=De  handles=(none)
+002  sent=[2 4 5]                pred=[]         act=[5]        err= 2.0  lane=De  handles=(none)
+003  sent=[2 4 5]                pred=[]         act=[5]        err= 2.0  lane=De  handles=(none)
+004  sent=[2 4 4]                pred=[]         act=[5]        err= 2.0  lane=De  handles=(none)
+005  sent=[2 5 4]                pred=[]         act=[5]        err= 2.0  lane=De  handles=(none)
+006  sent=[3 5 4]                pred=[]         act=[5]        err= 2.0  lane=De  handles=(none)
+007  sent=[3 5 3]                pred=[]         act=[5]        err= 2.0  lane=De  handles=(none)
+008  sent=[3 5 3]                pred=[]         act=[5]        err= 2.0  lane=De  handles=(none)
+009  sent=[3 5 3]                pred=[]         act=[5]        err= 2.0  lane=De  handles=(none)
