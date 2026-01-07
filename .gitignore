@@ -6,3 +6,5 @@ data/training_runs/
 .vscode/
 .idea/
 .DS_Store
+
+*.bundle
