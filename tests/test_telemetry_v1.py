@@ -26,7 +26,8 @@ def test_multi_candidate_occurs_natural():
     candidate_count >= 2 within 200 steps (seeded).
     """
     seed = 123
-    agent = BootstrapAgentV1(seed=seed, promote_threshold=2)
+    # Lower gates so handles can be considered and compete even with low truth
+    agent = BootstrapAgentV1(seed=seed, promote_threshold=2, min_strength_to_predict=0.0, eligibility_min_to_consider=0.0)
     partner = make_partner("mixed")
     chan = ChannelV1(noise_prob=0.2, noise_jitter=1, seed=seed)
     

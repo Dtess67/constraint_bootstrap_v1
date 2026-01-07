@@ -17,7 +17,7 @@ def register_partner(kind: str, cls: Type[Partner]):
 
 def make_partner(kind: str) -> Partner:
     # Ensure all partners are registered
-    from . import legacy_v1, sum_prime_v1, mixed_v1, adversarial_partner_v1
+    from . import legacy_v1, sum_prime_v1, mixed_v1, adversarial_partner_v1, mixed_shift_v1, mixed_shift_large_v1
     
     kind = kind.strip().lower()
     if kind not in _REGISTRY:

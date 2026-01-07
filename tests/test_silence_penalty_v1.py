@@ -26,11 +26,12 @@ def test_silence_penalty_boosts_correct_handle():
     # Observe correct response. Silence penalty should trigger because we were SILENT.
     agent.observe((1,1), (5,), learn=True)
     
-    # h.strength should have been boosted. 
+    # h.eligibility should have been boosted. 
     # Standard update for hit is +0.08. 
     # silence_penalty is +0.1.
     # So 0.2 + 0.08 + 0.1 = 0.38
-    assert h.strength == pytest.approx(0.38)
+    assert h.eligibility == pytest.approx(0.38)
+    assert h.truth == 0.28 # Standard hit update (+0.08) but NO silence penalty (+0.1)
     assert h.hits == 1
 
 def test_no_silence_penalty_when_zero():
