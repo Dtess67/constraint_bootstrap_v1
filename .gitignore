@@ -8,3 +8,6 @@ data/training_runs/
 .DS_Store
 *.bundle
 logs/
+
+*.egg-info/
+
