@@ -9,8 +9,10 @@ import yaml
 
 try:
     from .na_gate_v0 import NAGateV0, log_event
+    from .contract_enforcer_v1 import ContractEnforcerV1
 except ImportError:
     from na_gate_v0 import NAGateV0, log_event
+    from contract_enforcer_v1 import ContractEnforcerV1
 
 def _evaluate(task, stakes, assumptions=None):
     if stakes == "low":
@@ -41,30 +43,28 @@ def get_qd_state_path(provided_path=None):
         
     return None
 
-def get_log_root(qd_state_path): # returns (log_root, err, contract_version)
-    if not qd_state_path:
-        return None, "missing_qd_state_path", None
+def get_log_root(state): # returns (log_root, err, contract_version)
+    if not state:
+        return None, "missing_state", None
     
     try:
-        if not qd_state_path.exists():
-            return None, f"qd_state_path_not_found:{qd_state_path}", None
+        qd_state = state.get("qd_state", {})
+        traceability = qd_state.get("traceability", {})
+        yaml_log_root = Path(traceability.get("log_root")) if traceability.get("log_root") else None
+        
+        contract = qd_state.get("canonical_naming_contract_v1", {})
+        contract_version = contract.get("version")
+        
+        # We can still look for log_root in raw lines if we want to support that, 
+        # but the request said "Keep safe_load only".
+        # So we'll rely on the parsed state.
+        
+        if not yaml_log_root:
+            return None, "missing_log_root_in_state", contract_version
             
-        with open(qd_state_path, "r", encoding="utf-8") as f:
-            content = f.read()
-            found_log_root = None
-            for line in content.splitlines():
-                if "log_root:" in line:
-                    path_str = line.split("log_root:")[1].strip().strip('"')
-                    found_log_root = Path(path_str)
-                    break
-            
-            state = yaml.safe_load(content)
-            contract = state.get("qd_state", {}).get("canonical_naming_contract_v1", {})
-            contract_version = contract.get("version")
-            yaml_log_root = Path(state["qd_state"]["traceability"]["log_root"])
-            return (found_log_root or yaml_log_root), None, contract_version
+        return yaml_log_root, None, contract_version
     except Exception as e:
-        return None, f"qd_state_parse_failed:{e}", None
+        return None, f"state_extract_failed:{e}", None
 
 def main(args=None):
     parser = argparse.ArgumentParser()
@@ -77,14 +77,41 @@ def main(args=None):
     
     parsed_args = parser.parse_args(args)
     
-    decision, flags, req = _evaluate(parsed_args.task, parsed_args.stakes, parsed_args.assumption)
+    qd_state_path = get_qd_state_path(parsed_args.qd_state_path)
+    state = None
+    if qd_state_path and qd_state_path.exists():
+        try:
+            with open(qd_state_path, "r", encoding="utf-8") as f:
+                state = yaml.safe_load(f)
+        except Exception as e:
+            if parsed_args.debug:
+                print(f"[DEBUG] qd_state_load_failed:{e}")
+
+    enforcer = None
+    task = (parsed_args.task or "").strip()
+    normalized_task = " ".join(task.split())
+    norm_notes = []
+    
+    if state:
+        try:
+            contract_data = state.get("qd_state", {}).get("canonical_naming_contract_v1", {})
+            enforcer = ContractEnforcerV1(contract_data)
+        except Exception as e:
+            if parsed_args.debug:
+                print(f"[DEBUG] enforcer_init_failed:{e}")
+
+    decision, flags, req = _evaluate(normalized_task, parsed_args.stakes, parsed_args.assumption)
     decision_id = str(uuid.uuid4())
     reason = None
 
-    qd_state_path = get_qd_state_path(parsed_args.qd_state_path)
-    log_root, path_err, contract_version = get_log_root(qd_state_path)
+    log_root, path_err, contract_version = get_log_root(state)
     if parsed_args.debug:
-        print(f"[DEBUG] contract_version={contract_version}")
+        mode = enforcer.mode if enforcer else "UNKNOWN"
+        print(f"[DEBUG] contract_version={contract_version} enforcement.mode={mode}")
+        if enforcer:
+            tag_p = enforcer.normalization.get("allowed_tag_pattern")
+            axis_p = enforcer.normalization.get("allowed_axis_pattern")
+            print(f"[DEBUG] patterns: tag={tag_p} axis={axis_p}")
     
     if path_err:
         decision = "HOLD"
@@ -131,7 +158,7 @@ def main(args=None):
                 f.write(json.dumps({
                     "timestamp": time.time(),
                     "decision_id": decision_id,
-                    "task": parsed_args.task,
+                    "task": normalized_task,
                     "stakes": parsed_args.stakes,
                     "decision": decision,
                     "assumption_id": assumption_id,
@@ -144,7 +171,7 @@ def main(args=None):
                     "timestamp": time.time(),
                     "decision_id": decision_id,
                     "decision": decision,
-                    "task": parsed_args.task
+                    "task": normalized_task
                 }) + "\n")
         except Exception as e:
             decision = "HOLD"
